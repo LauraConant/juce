@@ -142,7 +142,7 @@ private:
             int x;
             int y;
             int baseRadius;
-            float growthRate;
+            int growthRate;
         
             juce::Time creationTime;
         
@@ -196,10 +196,10 @@ private:
         return std::round(value * factor) / factor;
     }
 
-   float calculateRadius(const Circle& circle) const
+   float calculateRadius(const Wave& wave) const
        {
-           float elapsedTime = (juce::Time::getCurrentTime() - circle.creationTime).inSeconds();
-           return circle.baseRadius + (elapsedTime * circle.growthRate);
+           float elapsedTime = (juce::Time::getCurrentTime() - wave.creationTime).inSeconds();
+           return wave.baseRadius + (elapsedTime * wave.growthRate);
        }
     
     const float fadeOutDuration = 16.0f;  // Duration in seconds (lifespan of the circle)
@@ -223,19 +223,19 @@ private:
     }
 
     
-   std::tuple<float, float, float, float> calculateIntersections(const Circle& c1, float r1, const Circle& c2, float r2) const
+   std::tuple<float, float, float, float> calculateIntersections(const Wave& w1, float r1, const Wave& w2, float r2) const
        {
-           float distance = std::sqrt(std::pow(c2.x - c1.x, 2) + std::pow(c2.y - c1.y, 2));
+           float distance = std::sqrt(std::pow(w2.x - w1.x, 2) + std::pow(w2.y - w1.y, 2));
            float a = (r1 * r1 - r2 * r2 + distance * distance) / (2 * distance);
            float h = std::sqrt(r1 * r1 - a * a);
 
-           float dx = (c2.x - c1.x) / distance;
-           float dy = (c2.y - c1.y) / distance;
+           float dx = (w2.x - w1.x) / distance;
+           float dy = (w2.y - w1.y) / distance;
 
-           float ix1 = c1.x + a * dx + h * dy;
-           float iy1 = c1.y + a * dy - h * dx;
-           float ix2 = c1.x + a * dx - h * dy;
-           float iy2 = c1.y + a * dy + h * dx;
+           float ix1 = w1.x + a * dx + h * dy;
+           float iy1 = w1.y + a * dy - h * dx;
+           float ix2 = w1.x + a * dx - h * dy;
+           float iy2 = w1.y + a * dy + h * dx;
 
            return { ix1, iy1, ix2, iy2 };
        }

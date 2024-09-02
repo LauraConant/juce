@@ -152,27 +152,27 @@ void TekhneAudioProcessorEditor::erasingCircles()
                 [this](const IntersectionPair& intersection)
                 {
                     // Get the circles from the stored coordinates
-                    auto circle1It = std::find_if(circles.begin(), circles.end(),
-                        [&intersection](const Circle& c) {
-                            return c.x == intersection.x1 && c.y == intersection.y1;
+                    auto circle1It = std::find_if(waves.begin(), waves.end(),
+                        [&intersection](const Wave& w) {
+                            return w.x == intersection.x1 && w.y == intersection.y1;
                         });
 
-                    auto circle2It = std::find_if(circles.begin(), circles.end(),
-                        [&intersection](const Circle& c) {
-                            return c.x == intersection.x2 && c.y == intersection.y2;
+                    auto circle2It = std::find_if(waves.begin(), waves.end(),
+                        [&intersection](const Wave& w) {
+                            return w.x == intersection.x2 && w.y == intersection.y2;
                         });
 
                     // Check if circles are still present
-                    if (circle1It == circles.end() || circle2It == circles.end())
+                    if (circle1It == waves.end() || circle2It == waves.end())
                         return true; // Remove if either circle is missing
 
-                    const Circle& c1 = *circle1It;
-                    const Circle& c2 = *circle2It;
-                    float r1 = calculateRadius(c1);
-                    float r2 = calculateRadius(c2);
+                    const Wave& w1 = *circle1It;
+                    const Wave& w2 = *circle2It;
+                    float r1 = calculateRadius(w1);
+                    float r2 = calculateRadius(w2);
 
                     // Check if the circles still intersect
-                    return !doCirclesIntersect(c1.x, c1.y, r1, c2.x, c2.y, r2);
+                    return !doCirclesIntersect(w1.x, w1.y, r1, w2.x, w2.y, r2);
                 }),
             intersectionPairs.end());
 }
@@ -249,20 +249,20 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
 
     bool newIntersectionFound = false;
     
-    for (int i = 0; i < waves.size(); ++i)
-    {
-        Wave& w1 = waves[i];
-        
-        float elapsedTimeW = (juce::Time::getCurrentTime() - w1.creationTime).inSeconds();
-        
-        float w1Radius =  w1.baseRadius + (elapsedTimeW * w1.growthRate);
-//        DBG(w1.x - w1Radius);
-        
-        int w1Diameter = static_cast<int>(w1Radius * 2.0f);
-
-        g.setColour(juce::Colours::white);
-        g.drawEllipse(w1.x - w1Radius, w1.y - w1Radius, w1Diameter, w1Diameter, 1.0f);
-    }
+//    for (int i = 0; i < waves.size(); ++i)
+//    {
+//        Wave& w1 = waves[i];
+//
+//        float elapsedTimeW = (juce::Time::getCurrentTime() - w1.creationTime).inSeconds();
+//
+//        float w1Radius =  w1.baseRadius + (elapsedTimeW * w1.growthRate);
+////        DBG(w1.x - w1Radius);
+//
+//        int w1Diameter = static_cast<int>(w1Radius * 2.0f);
+//
+//        g.setColour(juce::Colours::white);
+//        g.drawEllipse(w1.x - w1Radius, w1.y - w1Radius, w1Diameter, w1Diameter, 1.0f);
+//    }
 
     for (int i = 0; i < circles.size(); ++i)
     {
@@ -276,16 +276,28 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
         
         g.setColour(juce::Colours::white.withAlpha(opacity));
         g.fillEllipse(c1.x - c1Radius, c1.y - c1Radius, c1Diameter, c1Diameter);
+        
+    }
+    
+    for (int i = 0; i < waves.size(); ++i)
+    {
+        Wave& w1 = waves[i];
 
-        for (int j = i + 1; j < circles.size(); ++j)
+        float w1Radius = calculateRadius(w1);
+        int w1Diameter = static_cast<int>(w1Radius * 2.0f);
+       
+        g.setColour(juce::Colours::white);
+        g.drawEllipse(w1.x - w1Radius, w1.y - w1Radius, w1Diameter, w1Diameter, 1.0f);
+        
+        for (int j = i + 1; j < waves.size(); ++j)
         {
-            Circle& c2 = circles[j];
-            float c2Radius = c2.baseRadius;
+            Wave& w2 = waves[j];
+            float w2Radius = w2.baseRadius;
 
-            if (doCirclesIntersect(c1.x, c1.y, c1Radius, c2.x, c2.y, c2Radius))
+            if (doCirclesIntersect(w1.x, w1.y, w1Radius, w2.x, w2.y, w2Radius))
             {
                 g.setColour(juce::Colours::violet);
-                auto [ix1, iy1, ix2, iy2] = calculateIntersections(c1, c1Radius, c2, c2Radius);
+                auto [ix1, iy1, ix2, iy2] = calculateIntersections(w1, w1Radius, w2, w2Radius);
                 g.fillEllipse(ix1 - 5, iy1 - 5, 10, 10);
                 g.fillEllipse(ix2 - 5, iy2 - 5, 10, 10);
 
@@ -301,23 +313,6 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
                 {
                     intersectionPairs.push_back(newIntersection);
                     newIntersectionFound = true;
-//
-//                    juce::FontOptions font(14.0f);
-//                    g.setFont(font);
-                   
-//                    int startY = 30;
-//                    int lineHeight = 20;
-                   
-//                    g.setColour(juce::Colours::white);
-                   
-//                    for (const auto& intersection : intersectionPairs)
-//                        {
-//                          juce::String text = "Intersection at (" + juce::String(intersection.x1, 1) + ", " + juce::String(intersection.y1, 1) + ") and (" + juce::String(intersection.x2, 1) + ", " + juce::String(intersection.y2, 1) + ")";
-//
-//                              g.drawText(text, 10, startY, 400, lineHeight, juce::Justification::left);
-//                                                  startY += lineHeight;
-//                        }
-
                 }
             }
         }
@@ -330,29 +325,29 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
     }
 }
 
-void TekhneAudioProcessorEditor::updateToggleButtonState()
-{
-    for (int i = 0; i < circles.size(); ++i)
-    {
-        const Circle& c1 = circles[i];
-        float r1 = calculateRadius(c1);
-
-        for (int j = i + 1; j < circles.size(); ++j)
-        {
-            const Circle& c2 = circles[j];
-            float r2 = calculateRadius(c2);
-
-
-            if (doCirclesIntersect(c1.x, c1.y, r1, c2.x, c2.y, r2))
-            {
-                onOffButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-                return;
-            }
-        }
-    }
-
-    onOffButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-}
+//void TekhneAudioProcessorEditor::updateToggleButtonState()
+//{
+//    for (int i = 0; i < circles.size(); ++i)
+//    {
+//        const Circle& c1 = circles[i];
+//        float r1 = calculateRadius(c1);
+//
+//        for (int j = i + 1; j < circles.size(); ++j)
+//        {
+//            const Circle& c2 = circles[j];
+//            float r2 = calculateRadius(c2);
+//
+//
+//            if (doCirclesIntersect(c1.x, c1.y, r1, c2.x, c2.y, r2))
+//            {
+//                onOffButton.setToggleState(true, juce::NotificationType::dontSendNotification);
+//                return;
+//            }
+//        }
+//    }
+//
+//    onOffButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+//}
 
 void TekhneAudioProcessorEditor::resized()
 {

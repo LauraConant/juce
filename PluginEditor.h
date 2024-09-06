@@ -48,9 +48,16 @@ private:
     // access the processor object that created it.
     TekhneAudioProcessor& audioProcessor;
     
-    juce::ToggleButton onOffButton;
     juce::Slider radiusSlider;
     juce::Slider growthSlider;
+    
+    juce::Slider waveDistance;
+    juce::Label waveDistanceLabel;
+
+    juce::Slider carrierFreq;
+    juce::Label carrierFreqLabel;
+    juce::Label carrierFreqValueLabel;
+
 
     juce::Slider modFreq;
     juce::Slider fmDepth;
@@ -58,7 +65,12 @@ private:
     juce::Slider modFreq2;
     juce::Slider fmDepth2;
     
-
+    float distance_center;
+    int waveLife;
+    
+    std::set<int> availableIDs;  // Keeps track of available IDs for reuse
+    int nextID = 1;
+    
 //    const std::array<float, 128> midiNoteFrequencies = []{
 //        std::array<float, 128> frequencies = {};
 //        for (int i = 0; i < 128; ++i)
@@ -123,12 +135,20 @@ private:
     
     //------//
     
+    static int generateUniqueId()
+        {
+            static int idCounter = 0;
+            return idCounter++;
+        }
+    
     struct Circle
         {
             int x;
             int y;
             int baseRadius;
             int growthRate;
+            int waveDistance;
+            int id;
         
             juce::Time creationTime;
             float opacity = 1;
@@ -143,6 +163,7 @@ private:
             int y;
             int baseRadius;
             int growthRate;
+            int circleID;
         
             juce::Time creationTime;
         
@@ -151,28 +172,12 @@ private:
                   y(circle.y),
                   baseRadius(circle.baseRadius),
                   growthRate(circle.growthRate),
+                  circleID(circle.id),
                   creationTime(juce::Time::getCurrentTime())
             {}
         };
     
     std::vector<Wave> waves;
-    
-//
-//    struct CircleWithWaves
-//        {
-//            Circle circle;
-//            std::vector<Wave> waves;
-//
-//            // Constructor to initialize Circle and create waves
-//            CircleWithWaves(const Circle& c) : circle(c) {}
-//
-//            // Method to add waves related to the Circle
-//            void addWaves(float wx, float wy, float wGrowthRate) {
-//                waves.emplace_back(wx, wy, wGrowthRate);
-//            }
-//        };
-//
-//    std::vector<CircleWithWaves> circleWithWaves;
     
     //------//
     
@@ -202,12 +207,12 @@ private:
            return wave.baseRadius + (elapsedTime * wave.growthRate);
        }
     
-    const float fadeOutDuration = 16.0f;  // Duration in seconds (lifespan of the circle)
+    
+    const float fadeOutDuration = 20.0f;  // Duration in seconds (lifespan of the circle)
     const int timerIntervalMs = 60;  // Timer interval in milliseconds as set by startTimer(60)
     const int framesPerSecond = 1000 / timerIntervalMs;  // Calculate frames per second
     const int totalFrames = static_cast<int>(fadeOutDuration * framesPerSecond);  // Total number of frames for fade-out
     const float decrementRate = 1.0f / totalFrames;  // Opacity decrement per frame (callback)Rate = 1.0f / totalFrames;  // Opacity decrement per frame
-    
     
     float calculateOpacity(Circle& circle, float decrementRate)
     {

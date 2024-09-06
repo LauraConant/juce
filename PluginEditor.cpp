@@ -16,14 +16,15 @@ TekhneAudioProcessorEditor::TekhneAudioProcessorEditor (TekhneAudioProcessor& p)
 {
 
     radiusSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    radiusSlider.setRange(10.0, 100.0, 1.0);
-    radiusSlider.setValue(55.0);
+    radiusSlider.setRange(5.0, 50.0, 1.0);
+    radiusSlider.setValue(20.0);
     radiusSlider.addListener(this);
+    radiusSlider.setTextValueSuffix(" px");
 
     radiusSlider.setColour(juce::Slider::thumbColourId, juce::Colours::white);
     radiusSlider.setColour(juce::Slider::trackColourId, juce::Colours::white);
     
-    addAndMakeVisible(radiusSlider);
+//    addAndMakeVisible(radiusSlider);
     
     growthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     growthSlider.setRange(1.0, 20.0, 1.0);
@@ -33,41 +34,40 @@ TekhneAudioProcessorEditor::TekhneAudioProcessorEditor (TekhneAudioProcessor& p)
     growthSlider.setColour(juce::Slider::thumbColourId, juce::Colours::white);
     growthSlider.setColour(juce::Slider::trackColourId, juce::Colours::white);
     
-    addAndMakeVisible(growthSlider);
+//    addAndMakeVisible(growthSlider);
     
-//    carrierFreq.setSliderStyle(juce::Slider::LinearHorizontal);
-//    carrierFreq.setRange(200.0, 2000.0, 1.0);
-//    carrierFreq.setValue(440.0);
-//    carrierFreq.addListener(this);
-//
-    modFreq.setSliderStyle(juce::Slider::LinearHorizontal);
-    modFreq.setRange(5.0, 2000.0, 1.0);
-    modFreq.setValue(880.0);
-    modFreq.addListener(this);
+    waveDistance.setSliderStyle(juce::Slider::LinearHorizontal);
+    waveDistance.setRange(2.0, 9.0, 1.0);
+    waveDistance.setValue(4.0);
+    waveDistance.setColour(juce::Slider::thumbColourId, juce::Colours::white);
+    waveDistance.setColour(juce::Slider::trackColourId, juce::Colours::white);
+    waveDistance.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);  // Disable built-in text box
 
-    fmDepth.setSliderStyle(juce::Slider::LinearHorizontal);
-    fmDepth.setRange(1.0, 1500.0, 1.0);
-    fmDepth.setValue(500.0);
-    fmDepth.addListener(this);
+    addAndMakeVisible(waveDistance);
 
-    addAndMakeVisible(modFreq);
-    addAndMakeVisible(fmDepth);
+    // Create a label for the Wave Distance slider
+    waveDistanceLabel.setText("Water viscosity", juce::dontSendNotification);
+    waveDistanceLabel.attachToComponent(&waveDistance, false); // Attach it to the left side
+    waveDistanceLabel.setJustificationType(juce::Justification::centredRight);
+    addAndMakeVisible(waveDistanceLabel);
     
-    modFreq2.setSliderStyle(juce::Slider::LinearHorizontal);
-    modFreq2.setRange(5.0, 1000.0, 1.0);
-    modFreq2.setValue(5.0);
-    modFreq2.addListener(this);
+    carrierFreq.setSliderStyle(juce::Slider::LinearHorizontal);
+    carrierFreq.setRange(200.0, 2000.0, 1.0);
+    carrierFreq.setValue(440.0);
+    carrierFreq.addListener(this);
+    carrierFreq.setColour(juce::Slider::thumbColourId, juce::Colours::white);
+    carrierFreq.setColour(juce::Slider::trackColourId, juce::Colours::white);
+    carrierFreq.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);  // Disable built-in text box
 
-    fmDepth2.setSliderStyle(juce::Slider::LinearHorizontal);
-    fmDepth2.setRange(1.0, 1500.0, 1.0);
-    fmDepth2.setValue(500.0);
-    fmDepth2.addListener(this);
-//
-//    addAndMakeVisible(modFreq2);
-//    addAndMakeVisible(fmDepth2);
+    addAndMakeVisible(carrierFreq);
+
+    // Create a label for the Carrier Frequency slider
+    carrierFreqLabel.setText("Water turbulence", juce::dontSendNotification);
+    carrierFreqLabel.attachToComponent(&carrierFreq, true); // Attach it to the left side
+    carrierFreqLabel.setJustificationType(juce::Justification::centredRight);
+    addAndMakeVisible(carrierFreqLabel);
     
-    
-    setSize (1200, 800);
+    setSize(700, 700);
     startTimer(60);
 }
 
@@ -83,15 +83,11 @@ void TekhneAudioProcessorEditor::getIntersectionsX()
            auto latestIntersectionX = intersectionPairs.back().x1;
            auto width = getWidth();
 
-           // Map the X position to a frequency range (100 to 800)
-           juce::NormalisableRange<float> frequencyRange(5.0f, 2000.0f);
+           juce::NormalisableRange<float> frequencyRange(2000.0f, 5.0f);
            float frequencyValue = frequencyRange.convertFrom0to1(latestIntersectionX / static_cast<float>(width));
            
            float quantizedFrequency = quantizeFrequency(frequencyValue);
 
-//           DBG(static_cast<float>(frequencyValue));
-
-           // Update the frequency parameter in the AudioProcessor
            audioProcessor.treeState.getParameter("frequency")->setValueNotifyingHost(frequencyRange.convertTo0to1(static_cast<float>(quantizedFrequency)));
        }
 }
@@ -103,6 +99,18 @@ void TekhneAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
     {
         update();
     }
+    if (slider == &waveDistance)
+    {
+//        audioProcessor.setModulatorParameters(distance_center, modulationIndexID, waveLife);
+    }
+    else if (slider == &carrierFreq)
+       {
+           carrierFreqValueLabel.setText(juce::String(carrierFreq.getValue()) + " Hz", juce::dontSendNotification);
+           
+           float freq = carrierFreq.getValue();
+           float value = quantizeFrequency(freq);
+           audioProcessor.treeState.getParameter("frequency")->setValueNotifyingHost(audioProcessor.treeState.getParameter("frequency")->getNormalisableRange().convertTo0to1(value));
+       }
     else if (slider == &modFreq)
        {
            float value = modFreq.getValue();
@@ -115,12 +123,12 @@ void TekhneAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
        }
     else if (slider == &modFreq2)
        {
-           float value = modFreq.getValue();
+           float value = modFreq2.getValue();
            audioProcessor.treeState.getParameter("modFreq2")->setValueNotifyingHost(audioProcessor.treeState.getParameter("modFreq2")->getNormalisableRange().convertTo0to1(value));
        }
     else if (slider == &fmDepth2)
        {
-           float value = fmDepth.getValue();
+           float value = fmDepth2.getValue();
            audioProcessor.treeState.getParameter("fmDepth2")->setValueNotifyingHost(audioProcessor.treeState.getParameter("fmDepth2")->getNormalisableRange().convertTo0to1(value));
        }
 }
@@ -139,14 +147,19 @@ void TekhneAudioProcessorEditor::erasingCircles()
            }),
            waves.end());
 
-    circles.erase(std::remove_if(circles.begin(), circles.end(),
-        [now, lifeSpan](const Circle& circle)
+    for (auto it = circles.begin(); it != circles.end(); /* no increment */)
         {
-        return (now - circle.creationTime).inSeconds() >= lifeSpan;
-        }),
-    circles.end());
+            if ((now - it->creationTime).inSeconds() >= lifeSpan)
+            {
+                availableIDs.insert(it->id);  // Recycle the ID
+                it = circles.erase(it);       // Remove the circle and update the iterator
+            }
+            else
+            {
+                ++it;  // Increment the iterator only if no circle was erased
+            }
+        }
 
-    // Remove intersections from the vector after 20s
     intersectionPairs.erase(
             std::remove_if(intersectionPairs.begin(), intersectionPairs.end(),
                 [this](const IntersectionPair& intersection)
@@ -184,30 +197,41 @@ void TekhneAudioProcessorEditor::update()
         for (auto& circle : circles)
             {
                 float elapsedTime = (juce::Time::getCurrentTime() - circle.creationTime).inSeconds();
-                if (elapsedTime >= 1.0f && std::fmod(elapsedTime, 4.0f) < 0.1f)
-                {
-                    waves.push_back(circle);
-//                    DBG(waves.size());
-                }
+        
+                    if (elapsedTime <= 0.2f || (elapsedTime >= 1.0f && std::fmod(elapsedTime, circle.waveDistance) < 0.1f))
+                    {
+                        waves.push_back(circle);
+                    }
 
             }
-    
-//    DBG(opacity);
     
         repaint();
     }
 
 void TekhneAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
     {
-    // Get the click position relative to the component
-    juce::Point<int> clickPosition = event.getPosition();
 
-    // Store the click position and current time
+    juce::Point<int> clickPosition = event.getPosition();
+    
+    int id;
+    
+       if (!availableIDs.empty())
+       {
+           id = *availableIDs.begin();
+           availableIDs.erase(availableIDs.begin());
+       }
+       else
+       {
+           id = nextID++;  // Use the next new ID
+       }
+
     circles.push_back(Circle{
                             clickPosition.x,
                             clickPosition.y,
                             static_cast<int>(radiusSlider.getValue()),
                             static_cast<int>(growthSlider.getValue()),
+                            static_cast<int>(waveDistance.getValue()),
+                            id,
                             juce::Time::getCurrentTime()
                         }
     );
@@ -215,6 +239,11 @@ void TekhneAudioProcessorEditor::mouseDown(const juce::MouseEvent& event)
     erasingCircles();
 
     repaint();
+    
+//    for (const auto& circle : circles)  // Iterate over each circle
+//        {
+//            DBG("Circle ID: " << circle.id);
+//        }
 
 }
 
@@ -247,22 +276,11 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
     setColour(juce::Slider::thumbColourId, juce::Colours::white);
     setColour(juce::Slider::trackColourId, juce::Colours::white);
 
-    bool newIntersectionFound = false;
+//    bool newIntersectionFound = false;
     
-//    for (int i = 0; i < waves.size(); ++i)
-//    {
-//        Wave& w1 = waves[i];
-//
-//        float elapsedTimeW = (juce::Time::getCurrentTime() - w1.creationTime).inSeconds();
-//
-//        float w1Radius =  w1.baseRadius + (elapsedTimeW * w1.growthRate);
-////        DBG(w1.x - w1Radius);
-//
-//        int w1Diameter = static_cast<int>(w1Radius * 2.0f);
-//
-//        g.setColour(juce::Colours::white);
-//        g.drawEllipse(w1.x - w1Radius, w1.y - w1Radius, w1Diameter, w1Diameter, 1.0f);
-//    }
+    g.setColour(juce::Colours::hotpink);
+    g.fillEllipse(getWidth() / 2 - 4, getHeight() / 2 - 4, 8, 8);
+    
 
     for (int i = 0; i < circles.size(); ++i)
     {
@@ -272,11 +290,18 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
 
         float opacity = calculateOpacity(c1, decrementRate);
         
-        DBG(opacity);
-        
         g.setColour(juce::Colours::white.withAlpha(opacity));
         g.fillEllipse(c1.x - c1Radius, c1.y - c1Radius, c1Diameter, c1Diameter);
         
+        int s1 = (c1.x) - getWidth() / 2;
+        int s2 = (c1.y) - getHeight() / 2;
+        
+        distance_center = sqrt(pow(s1, 2) + pow(s2, 2));
+//        DBG(distance_center);
+        
+        int modulationIndexID = c1.id;
+        
+        audioProcessor.setModulatorParameters(distance_center, modulationIndexID, c1.waveDistance);
     }
     
     for (int i = 0; i < waves.size(); ++i)
@@ -289,76 +314,64 @@ void TekhneAudioProcessorEditor::paint(juce::Graphics& g)
         g.setColour(juce::Colours::white);
         g.drawEllipse(w1.x - w1Radius, w1.y - w1Radius, w1Diameter, w1Diameter, 1.0f);
         
-        for (int j = i + 1; j < waves.size(); ++j)
-        {
-            Wave& w2 = waves[j];
-            float w2Radius = w2.baseRadius;
-
-            if (doCirclesIntersect(w1.x, w1.y, w1Radius, w2.x, w2.y, w2Radius))
-            {
-                g.setColour(juce::Colours::violet);
-                auto [ix1, iy1, ix2, iy2] = calculateIntersections(w1, w1Radius, w2, w2Radius);
-                g.fillEllipse(ix1 - 5, iy1 - 5, 10, 10);
-                g.fillEllipse(ix2 - 5, iy2 - 5, 10, 10);
-
-                IntersectionPair newIntersection{
-                    roundToDecimalPlaces(ix1, 1),
-                    roundToDecimalPlaces(iy1, 1),
-                    roundToDecimalPlaces(ix2, 1),
-                    roundToDecimalPlaces(iy2, 1)
-                };
-
-                // Check if the intersection is new
-                if (std::find(intersectionPairs.begin(), intersectionPairs.end(), newIntersection) == intersectionPairs.end())
-                {
-                    intersectionPairs.push_back(newIntersection);
-                    newIntersectionFound = true;
-                }
+//        float expanded_r = w1.baseRadius + (w1.growthRate * fadeOutDuration);
+//        std::cout << "expanded_r: " << expanded_r << std::endl;
+//           std::cout << "w1.x - expanded_r: " << (w1.x - expanded_r) << std::endl;
+//           std::cout << "w1.x - w1Radius: " << (w1.x - w1.baseRadius) << std::endl;
+        
+//        for (int j = i + 1; j < waves.size(); ++j)
+//        {
+//            Wave& w2 = waves[i];
+//
+//            float w2Radius = calculateRadius(w2);
+//
+//            if (w1.circleID != w2.circleID)
+//            {
+//            if (doCirclesIntersect(w1.x, w1.y, w1Radius, w2.x, w2.y, w2Radius))
+//            {
+//                DBG("intersecting");
+//
+//                g.setColour(juce::Colours::violet);
+//                auto [ix1, iy1, ix2, iy2] = calculateIntersections(w1, w1Radius, w2, w2Radius);
+//                g.fillEllipse(ix1 - 5, iy1 - 5, 10, 10);
+//                g.fillEllipse(ix2 - 5, iy2 - 5, 10, 10);
+//
+//                IntersectionPair newIntersection{
+//                    roundToDecimalPlaces(ix1, 1),
+//                    roundToDecimalPlaces(iy1, 1),
+//                    roundToDecimalPlaces(ix2, 1),
+//                    roundToDecimalPlaces(iy2, 1)
+//                };
+//
+//                // Check if the intersection is new
+//                if (std::find(intersectionPairs.begin(), intersectionPairs.end(), newIntersection) == intersectionPairs.end())
+//                {
+//                    intersectionPairs.push_back(newIntersection);
+//                    newIntersectionFound = true;
+//                }
+//            }
             }
         }
-    }
+//    }
 
     // If a new intersection is found, update the frequency
-    if (newIntersectionFound)
-    {
-        getIntersectionsX();
-    }
-}
-
-//void TekhneAudioProcessorEditor::updateToggleButtonState()
-//{
-//    for (int i = 0; i < circles.size(); ++i)
+//    if (newIntersectionFound)
 //    {
-//        const Circle& c1 = circles[i];
-//        float r1 = calculateRadius(c1);
-//
-//        for (int j = i + 1; j < circles.size(); ++j)
-//        {
-//            const Circle& c2 = circles[j];
-//            float r2 = calculateRadius(c2);
-//
-//
-//            if (doCirclesIntersect(c1.x, c1.y, r1, c2.x, c2.y, r2))
-//            {
-//                onOffButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-//                return;
-//            }
-//        }
+//        getIntersectionsX();
 //    }
-//
-//    onOffButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+
 //}
 
 void TekhneAudioProcessorEditor::resized()
 {
 //     This is generally where you'll want to lay out the positions of any
 //     subcomponents in your editor..
-    onOffButton.setBounds(150, 100, 100, 30);
-    radiusSlider.setBounds(10, 10, getWidth() / 3, 20);
-    growthSlider.setBounds(10, 40, getWidth() / 3, 20);
 
-    modFreq.setBounds(10, 100, getWidth() / 1.5, 20);
-    fmDepth.setBounds(10, 130, getWidth() / 3, 20);
-//    modFreq2.setBounds(10, 150, getWidth() / 3, 20);
-//    fmDepth2.setBounds(10, 170, getWidth() / 3, 20);
+    waveDistance.setBounds(10, 10, getWidth() / 1.5, 20);
+
+    carrierFreq.setBounds(10, 50, getWidth() / 1.5, 20);
+    
+    carrierFreqLabel.setBounds(10, 65, 120, 20);
+    waveDistanceLabel.setBounds(10, 25, 105, 20);
+    
 }

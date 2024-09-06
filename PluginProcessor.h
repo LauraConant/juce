@@ -53,17 +53,85 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+//    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
 
     juce::AudioProcessorValueTreeState treeState;
     void parameterChanged(const juce::String& parameterID, float newValue) override;
+    
+    void setModulatorParameters(float newDistance, int modulationIndexID, int waveLife);
+    float calculateFunctionFmDepth(float x);
+    
+    void setModulatorFrequency(float freq);
     
 private:
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     
+    float distance_center = 0;
+    float scaled_distance = 0;
+    int ID;
+    
+    bool rampComplete = false;
+    
+    bool modulationCompleted = false;
+    bool modulationCompleted2 = false;
+    bool modulationCompleted3 = false;
+    bool modulationCompleted4 = false;
+    
+    float modulationIndex = 0.0f; // Target modulation value
+    float modulationIndex2 = 0.0f; // Target modulation value
+    float modulationIndex3 = 0.0f; // Target modulation value
+    float modulationIndex4 = 0.0f; // Target modulation value
+
+    float modulationStart = 0.0f;
+    float modulationTarget = 0.0f;
+    float modulationIncrement = 0.0f;
+    float modulationIncrement1 = 0.0f;
+    float modulationIncrement2 = 0.0f;
+    float modulationIncrement3 = 0.0f;
+    float modulationIncrement4 = 0.0f;
+    float rampTime = 0.f;
+    float rampTime1 = 0.f;
+    float rampTime2 = 0.f;
+    float rampTime3 = 0.f;
+    float rampTime4 = 0.f;
+    bool increasing1 = true;
+    bool increasing2 = true;
+    bool increasing3 = true;
+    bool increasing4 = true;
+    
+    float out_carrier;
+    float phase_carrier;
+    float incr_carrier;
+    float two_pi = 6.28318;
+    float freq_carrier = *treeState.getRawParameterValue("modFreq");
+    
+    float out_modulator;
+    float phase_modulator;
+    float incr_modulator;
+    float freq_modulator;
+    
+    float out_modulator2;
+    float phase_modulator2;
+    float incr_modulator2;
+    float freq_modulator2;
+    
+    float out_modulator3;
+    float phase_modulator3;
+    float incr_modulator3;
+    float freq_modulator3;
+    
+    float out_modulator4;
+    float phase_modulator4;
+    float incr_modulator4;
+    float freq_modulator4;
+    
+    float fmIndex;
+
     juce::dsp::Oscillator<float> osc { [](float x) { return std::sin (x); }};
     juce::dsp::Oscillator<float> modulatorOscillator { [](float x) { return std::sin (x); }};
-    juce::dsp::Oscillator<float> modulatorOscillator2 { [](float x) { return std::sin (x); }};
+//    juce::dsp::Oscillator<float> modulatorOscillator2 { [](float x) { return std::sin (x); }};
     
     float fmMod { 0.0f };
     float fmDepth { 0.0f };
@@ -73,10 +141,10 @@ private:
     float fmDepth2 { 0.0f };
     float lastFreq2 { 0 };
     
-    float cyclesPerSecond;
-    float delta;
-    float angleDelta { 0.0f };
-    float phase { 0.0f };
+//    float cyclesPerSecond;
+//    float delta;
+//    float angleDelta { 0.0f };
+//    float phase { 0.0f };
     
     
     juce::dsp::Gain<float> gain;
